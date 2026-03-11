@@ -1,0 +1,10 @@
+crewai-tools
+pymupdf
+pdfplumber
+pydantic
+pytesseract
+unstructured
+python-dotenv
+serper
+crewai>=0.70.0
+requests
