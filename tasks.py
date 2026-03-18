@@ -1,38 +1,18 @@
 from crewai import Task
-from agents import (
-    bank_agent, itr_agent, payslip_agent,doc_classifier,
-    credit_agent, property_agent, summary_agent, report_agent
-)
-
 from models.outputs import (
     BankStatementOutput, ITROutput, PayslipOutput,
-    CIBILOutput, PropertyOutput, SummaryOutput
+    CIBILOutput, PropertyOutput, SummaryOutput,
 )
 
-doc_classification_task = Task(
 
-description="""
-Classify each document in {documents} into:
+def create_tasks(agents: dict) -> dict:
+    """
+    Create and return a fresh dict of Task instances bound to the given agents.
+    Called per-run so each concurrent crew gets its own independent task objects.
+    """
 
-- Bank Statement
-- Payslip
-- ITR
-- Credit Report
-- Property Document
-
-Return JSON mapping.
-""",
-
-agent=doc_classifier,
-
-expected_output="JSON document classification"
-)
-
-# -----------------------------------
-# Bank Statement Task
-# -----------------------------------
-bank_task = Task(
-    description="""
+    bank_task = Task(
+        description="""
 Analyze the following bank statement document(s):
 
 {bank_statement_docs}
@@ -46,27 +26,25 @@ Extract and report:
 6. Large unexplained cash deposits (>50% of salary)
 7. Overdraft usage
 
-If salary credits are inconsistent or EMI amounts are unclear, use the 
+If salary credits are inconsistent or EMI amounts are unclear, use the
 ask_human tool to get clarification.
 
-Use web_search to verify current RBI guidelines on acceptable FOIR limits 
+Use web_search to verify current RBI guidelines on acceptable FOIR limits
 for home loans vs personal loans.
 
 CONFIDENCE SCORING (mandatory):
 Rate your confidence_score from 0-100 based on:
 - Were all expected fields found in the document? (+points)
-- Was the document legible and complete? (+points)  
+- Was the document legible and complete? (+points)
 - Did you have to make assumptions due to missing data? (-points)
 - Were there contradictions within the document? (-points)
 
 Also write a confidence_reason explaining the score in 1-2 sentences.
 If your confidence is below 60, explicitly note what information
 would be needed to improve it.
-
-Write your complete analysis and save it to: data/reports/agents/bank_statement_report.md
 """,
-    agent=bank_agent,
-    expected_output="""
+        agent=agents["bank"],
+        expected_output="""
 A detailed bank statement analysis report in markdown format covering:
 - Income analysis table (month-wise salary credits)
 - Balance analysis
@@ -75,14 +53,11 @@ A detailed bank statement analysis report in markdown format covering:
 - Red flags (if any)
 - Summary verdict on financial health
 """,
-output_pydantic=BankStatementOutput
-)
+        output_pydantic=BankStatementOutput,
+    )
 
-# -----------------------------------
-# ITR Task
-# -----------------------------------
-itr_task = Task(
-    description="""
+    itr_task = Task(
+        description="""
 Analyze the following ITR (Income Tax Return) document(s):
 
 {itr_docs}
@@ -102,18 +77,16 @@ Use web_search to verify ITR income thresholds for different loan types.
 CONFIDENCE SCORING (mandatory):
 Rate your confidence_score from 0-100 based on:
 - Were all expected fields found in the document? (+points)
-- Was the document legible and complete? (+points)  
+- Was the document legible and complete? (+points)
 - Did you have to make assumptions due to missing data? (-points)
 - Were there contradictions within the document? (-points)
 
 Also write a confidence_reason explaining the score in 1-2 sentences.
 If your confidence is below 60, explicitly note what information
 would be needed to improve it.
-
-Write your complete analysis and save it to: data/reports/agents/itr_report.md
 """,
-    agent=itr_agent,
-    expected_output="""
+        agent=agents["itr"],
+        expected_output="""
 An ITR analysis report covering:
 - Year-wise income table
 - Income source breakdown
@@ -121,14 +94,11 @@ An ITR analysis report covering:
 - Income stability verdict
 - Flags for inconsistencies
 """,
-output_pydantic=ITROutput
-)
+        output_pydantic=ITROutput,
+    )
 
-# -----------------------------------
-# Payslip Task
-# -----------------------------------
-payslip_task = Task(
-    description="""
+    payslip_task = Task(
+        description="""
 Analyze the following payslip document(s):
 
 {payslip_docs}
@@ -148,18 +118,16 @@ Use web_search to verify employer legitimacy or look up industry benchmarks.
 CONFIDENCE SCORING (mandatory):
 Rate your confidence_score from 0-100 based on:
 - Were all expected fields found in the document? (+points)
-- Was the document legible and complete? (+points)  
+- Was the document legible and complete? (+points)
 - Did you have to make assumptions due to missing data? (-points)
 - Were there contradictions within the document? (-points)
 
 Also write a confidence_reason explaining the score in 1-2 sentences.
 If your confidence is below 60, explicitly note what information
 would be needed to improve it.
-
-Write your complete analysis and save it to: data/reports/agents/payslip_report.md
 """,
-    agent=payslip_agent,
-    expected_output="""
+        agent=agents["payslip"],
+        expected_output="""
 A payslip analysis report covering:
 - Salary breakdown table
 - Employer verification notes
@@ -167,14 +135,11 @@ A payslip analysis report covering:
 - Take-home salary confirmation
 - Anomaly flags
 """,
-    output_pydantic=PayslipOutput
-)
+        output_pydantic=PayslipOutput,
+    )
 
-# -----------------------------------
-# CIBIL Task
-# -----------------------------------
-credit_task = Task(
-    description="""
+    credit_task = Task(
+        description="""
 Analyze the following CIBIL/credit report document(s):
 
 {cibil_docs}
@@ -188,25 +153,23 @@ Extract and report:
 6. Number of hard inquiries in last 6 months
 7. Total credit exposure vs. declared income
 
-Use web_search to look up minimum CIBIL score requirements for home/personal/auto loans 
+Use web_search to look up minimum CIBIL score requirements for home/personal/auto loans
 from major Indian banks (SBI, HDFC, ICICI).
 Use ask_human if account numbers or DPD values are unclear.
 
 CONFIDENCE SCORING (mandatory):
 Rate your confidence_score from 0-100 based on:
 - Were all expected fields found in the document? (+points)
-- Was the document legible and complete? (+points)  
+- Was the document legible and complete? (+points)
 - Did you have to make assumptions due to missing data? (-points)
 - Were there contradictions within the document? (-points)
 
 Also write a confidence_reason explaining the score in 1-2 sentences.
 If your confidence is below 60, explicitly note what information
 would be needed to improve it.
-
-Write your complete analysis and save it to: data/reports/agents/cibil_report.md
 """,
-    agent=credit_agent,
-    expected_output="""
+        agent=agents["cibil"],
+        expected_output="""
 A credit risk report covering:
 - CIBIL score with risk classification
 - Active loans table
@@ -215,14 +178,11 @@ A credit risk report covering:
 - Inquiry analysis
 - Overall creditworthiness verdict
 """,
-    output_pydantic=CIBILOutput
-)
+        output_pydantic=CIBILOutput,
+    )
 
-# -----------------------------------
-# Property Task
-# -----------------------------------
-property_task = Task(
-    description="""
+    property_task = Task(
+        description="""
 Analyze the following property document(s):
 
 {property_docs}
@@ -244,18 +204,16 @@ Use ask_human for missing registration numbers or unclear ownership details.
 CONFIDENCE SCORING (mandatory):
 Rate your confidence_score from 0-100 based on:
 - Were all expected fields found in the document? (+points)
-- Was the document legible and complete? (+points)  
+- Was the document legible and complete? (+points)
 - Did you have to make assumptions due to missing data? (-points)
 - Were there contradictions within the document? (-points)
 
 Also write a confidence_reason explaining the score in 1-2 sentences.
 If your confidence is below 60, explicitly note what information
 would be needed to improve it.
-
-Write your complete analysis and save it to: data/reports/agents/property_report.md
 """,
-    agent=property_agent,
-    expected_output="""
+        agent=agents["property"],
+        expected_output="""
 A property analysis report covering:
 - Property details summary
 - Title and ownership verification
@@ -264,14 +222,11 @@ A property analysis report covering:
 - Legal compliance flags
 - Overall property suitability verdict
 """,
-    output_pydantic=PropertyOutput
-)
+        output_pydantic=PropertyOutput,
+    )
 
-# -----------------------------------
-# Summary Task
-# -----------------------------------
-summary_task = Task(
-    description="""
+    summary_task = Task(
+        description="""
 You have access to the complete analyses from all specialist agents:
 
 BANK STATEMENT ANALYSIS:
@@ -294,7 +249,7 @@ Create a comprehensive loan underwriting summary that includes:
 ## ✅ Positive Factors
 List all strong points (high CIBIL, stable income, low FOIR, clear title, etc.)
 
-## ❌ Negative Factors  
+## ❌ Negative Factors
 List all weak points (low score, high FOIR, bounced cheques, DPD history, etc.)
 
 ## ⚠️ Risk Flags
@@ -315,7 +270,7 @@ APPROVE / CONDITIONAL APPROVE / REJECT
 CONFIDENCE SCORING (mandatory):
 Rate your confidence_score from 0-100 based on:
 - Were all expected fields found in the document? (+points)
-- Was the document legible and complete? (+points)  
+- Was the document legible and complete? (+points)
 - Did you have to make assumptions due to missing data? (-points)
 - Were there contradictions within the document? (-points)
 
@@ -327,22 +282,19 @@ Justification (3-5 sentences)
 
 Use web_search to verify current lending guidelines if needed.
 """,
-    agent=summary_agent,
-    expected_output="""
+        agent=agents["summary"],
+        expected_output="""
 A comprehensive loan underwriting decision report with:
 - Structured positives and negatives
 - Key metrics table
 - Risk flags
 - Clear final recommendation with justification
 """,
-    output_pydantic=SummaryOutput
-)
+        output_pydantic=SummaryOutput,
+    )
 
-# -----------------------------------
-# Final Report Task
-# -----------------------------------
-report_task = Task(
-    description="""
+    report_task = Task(
+        description="""
 Compile the complete final loan analysis report in professional markdown format.
 
 Use all the analyses and the summary provided:
@@ -395,10 +347,20 @@ Structure the final report as:
 
 ---
 
-*This report was generated by an AI-assisted loan underwriting system. 
-Final lending decisions must be reviewed and approved by a qualified 
+*This report was generated by an AI-assisted loan underwriting system.
+Final lending decisions must be reviewed and approved by a qualified
 credit officer as per RBI guidelines.*
 """,
-    agent=report_agent,
-    expected_output="Complete formatted markdown loan analysis report"
-)
+        agent=agents["report"],
+        expected_output="Complete formatted markdown loan analysis report",
+    )
+
+    return {
+        "bank_statement": bank_task,
+        "itr": itr_task,
+        "payslip": payslip_task,
+        "cibil": credit_task,
+        "property": property_task,
+        "summary": summary_task,
+        "report": report_task,
+    }

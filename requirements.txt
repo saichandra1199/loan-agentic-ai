@@ -1,3 +1,4 @@
+crewai>=1.10.1
 crewai-tools
 pymupdf
 pdfplumber
@@ -5,6 +6,16 @@ pydantic
 pytesseract
 unstructured
 python-dotenv
-serper
-crewai>=0.70.0
 requests
+reportlab
+
+# Web server
+fastapi>=0.111.0
+uvicorn[standard]>=0.29.0
+python-multipart
+streamlit>=1.35.0
+httpx
+
+# Testing
+pytest>=8.0.0
+pytest-asyncio>=0.23.0
